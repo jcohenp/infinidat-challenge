@@ -108,3 +108,7 @@
   - name: change ownership to the kubernetes user
     become_user: root
     command: "chown -R kubernetes: /home/kubernetes/infinidat-challenge"
+
+  - name: Include flask-app role
+    include_role:
+      name: flask-app

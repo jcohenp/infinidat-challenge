@@ -1,0 +1,15 @@
+- name: Remove Taint in all master Node
+  become: yes
+  become_user: kubernetes
+  command: kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
+
+- name: Create flask-app deployment
+  become_user: kubernetes
+  become: true
+  command: kubectl apply -f /home/kubernetes/infinidat-challenge/k8s/deployment.yaml
+
+- name: Create flask-app service
+  become_user: kubernetes
+  become: true
+  command: kubectl apply -f /home/kubernetes/infinidat-challenge/k8s/flask-svc.yaml
+
