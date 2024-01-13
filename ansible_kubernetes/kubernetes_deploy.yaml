@@ -31,14 +31,23 @@
       state: started
     ignore_errors: yes
 
-  - name: Add Google official GPG key
-    apt_key:
-      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+  - name: Install required packages
+    become: yes
+    apt:
+      name:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg
       state: present
 
+  - name: Add Kubernetes GPG key
+    become: yes
+    shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+  
   - name: Add Kubernetes Repository
     apt_repository:
-      repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+      repo: deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
       state: present
       filename: kubernetes
       mode: 0600
@@ -112,3 +121,7 @@
   - name: Include flask-app role
     include_role:
       name: flask-app
+
+  - name: Include monitoring role
+    include_role:
+      name: monitoring

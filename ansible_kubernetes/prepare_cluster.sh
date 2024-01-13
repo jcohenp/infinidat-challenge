@@ -32,6 +32,8 @@ EOF
 
 sudo systemctl daemon-reload && sudo systemctl restart docker
 
+sudo systemctl unmask kubelet.service
+
 sudo systemctl daemon-reload && sudo systemctl restart kubelet
 
 

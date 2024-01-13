@@ -1,0 +1,45 @@
+- name: Download Helm GPG key
+  shell: curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+
+- name: Determine dpkg architecture
+  command: dpkg --print-architecture
+  register: dpkg_architecture
+
+- name: Add Helm repository
+  lineinfile:
+    path: /etc/apt/sources.list.d/helm-stable-debian.list
+    line: "deb [arch={{ dpkg_architecture.stdout }} signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+    create: yes
+
+- name: Update apt repository cache
+  apt:
+    update_cache: yes
+
+- name: Install Helm
+  apt:
+    name: helm
+    state: present
+
+- name: Add Helm stable repository
+  command: helm repo add stable https://charts.helm.sh/stable
+
+- name: Add Prometheus Community Helm repository
+  command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+- name: Create namespace for Prometheus
+  become_user: kubernetes
+  become: true
+  command: kubectl create namespace prometheus
+
+- name: Add Helm to kubernetes user in sudoers
+  replace:
+    path: /etc/sudoers
+    regexp: '^(kubernetes\s+ALL=\(ALL\) NOPASSWD:/usr/bin/kubectl.*)$'
+    replace: '\1, /usr/local/bin/helm'
+    backup: yes
+    validate: 'visudo -cf %s'
+
+- name: Install Prometheus using Helm
+  become_user: kubernetes
+  become: true
+  command: helm install prometheus prometheus-community/kube-prometheus-stack -n prometheus
