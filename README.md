@@ -12,6 +12,8 @@ This repository contains various resources and configurations for managing a Kub
 
 - **ansible_kubernetes/**: Contains Ansible playbooks and roles for managing the Kubernetes environment.
   - **roles/**: Directory housing individual Ansible roles for specific configurations or tasks within the Kubernetes setup.
+    - **flask-app**: Role to set up the deployment and service of our flask app
+    - **monitoring**: Set up prometheus with grafana
   - **ansible_install.sh**: script to install ansible on ubuntu system
   - **prepare_cluster.sh**: script used by ansible to prepare the system before initialized the kubernetes cluster 
 - **templates**: htmls files that are used for the endpoints/routes
@@ -80,7 +82,7 @@ Deployment of the flask-app will be set with replicas, in this way it will ensur
 7. **Execute the initial setup playbook:**
 
     ```
-    ansible-playbook -i inventory kubernetes_deploy.yml
+    ansible-playbook -i inventory.ini kubernetes_deploy.yaml
     ```
     
 8. **Connect to the new kubernetes user:**
@@ -93,58 +95,89 @@ Deployment of the flask-app will be set with replicas, in this way it will ensur
     
     **kubectl get nodes -o wide**
     ```
-    NAME               STATUS   ROLES           AGE    VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION   CONTAINER-RUNTIME
-    ip-172-31-23-166   Ready    control-plane   3h3m   v1.28.2   172.31.23.166   <none>        Ubuntu 22.04.3 LTS   6.2.0-1017-aws   containerd://1.7.2
+    NAME              STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION   CONTAINER-RUNTIME
+    ip-172-31-27-42   Ready    control-plane   24m   v1.28.5   172.31.27.42   <none>        Ubuntu 22.04.3 LTS   6.2.0-1017-aws   containerd://1.7.2
     ```
     **kubectl get all -A**
 
     ```
-    NAMESPACE      NAME                                           READY   STATUS    RESTARTS   AGE
-    default        pod/flask-app-5bccc6cfc4-24gtj                 1/1     Running   0          35m
-    default        pod/flask-app-5bccc6cfc4-b7bh4                 1/1     Running   0          35m
-    kube-flannel   pod/kube-flannel-ds-9ndgs                      1/1     Running   0          3h3m
-    kube-system    pod/coredns-5dd5756b68-kntdw                   1/1     Running   0          3h3m
-    kube-system    pod/coredns-5dd5756b68-np8xx                   1/1     Running   0          3h3m
-    kube-system    pod/etcd-ip-172-31-23-166                      1/1     Running   2          3h4m
-    kube-system    pod/kube-apiserver-ip-172-31-23-166            1/1     Running   2          3h4m
-    kube-system    pod/kube-controller-manager-ip-172-31-23-166   1/1     Running   2          3h4m
-    kube-system    pod/kube-proxy-p58qb                           1/1     Running   0          3h3m
-    kube-system    pod/kube-scheduler-ip-172-31-23-166            1/1     Running   2          3h4m
+    NAMESPACE      NAME                                                         READY   STATUS    RESTARTS   AGE
+    default        pod/flask-app-5bccc6cfc4-fp8l2                               1/1     Running   0          24m
+    default        pod/flask-app-5bccc6cfc4-mqw9b                               1/1     Running   0          24m
+    kube-flannel   pod/kube-flannel-ds-8vd86                                    1/1     Running   0          24m
+    kube-system    pod/coredns-5dd5756b68-hmfrj                                 1/1     Running   0          24m
+    kube-system    pod/coredns-5dd5756b68-t7lx2                                 1/1     Running   0          24m
+    kube-system    pod/etcd-ip-172-31-27-42                                     1/1     Running   3          25m
+    kube-system    pod/kube-apiserver-ip-172-31-27-42                           1/1     Running   3          25m
+    kube-system    pod/kube-controller-manager-ip-172-31-27-42                  1/1     Running   3          25m
+    kube-system    pod/kube-proxy-622dj                                         1/1     Running   0          24m
+    kube-system    pod/kube-scheduler-ip-172-31-27-42                           1/1     Running   3          25m
+    prometheus     pod/alertmanager-prometheus-kube-prometheus-alertmanager-0   2/2     Running   0          24m
+    prometheus     pod/prometheus-grafana-77c588fccf-qspsd                      3/3     Running   0          24m
+    prometheus     pod/prometheus-kube-prometheus-operator-5f8cbfb69c-6gqhl     1/1     Running   0          24m
+    prometheus     pod/prometheus-kube-state-metrics-6db866c85b-h4rt6           1/1     Running   0          24m
+    prometheus     pod/prometheus-prometheus-kube-prometheus-prometheus-0       2/2     Running   0          24m
+    prometheus     pod/prometheus-prometheus-node-exporter-qczcp                1/1     Running   0          24m
     
-    NAMESPACE     NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)                  AGE
-    default       service/flask-svc    LoadBalancer   10.102.181.1   <pending>     80:31401/TCP             35m
-    default       service/kubernetes   ClusterIP      10.96.0.1      <none>        443/TCP                  3h4m
-    kube-system   service/kube-dns     ClusterIP      10.96.0.10     <none>        53/UDP,53/TCP,9153/TCP   3h4m
+    NAMESPACE     NAME                                                         TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                         AGE
+    default       service/flask-svc                                            LoadBalancer   10.105.107.84    <pending>     80:32144/TCP                    25m
+    default       service/kubernetes                                           ClusterIP      10.96.0.1        <none>        443/TCP                         25m
+    kube-system   service/kube-dns                                             ClusterIP      10.96.0.10       <none>        53/UDP,53/TCP,9153/TCP          25m
+    kube-system   service/prometheus-kube-prometheus-coredns                   ClusterIP      None             <none>        9153/TCP                        24m
+    kube-system   service/prometheus-kube-prometheus-kube-controller-manager   ClusterIP      None             <none>        10257/TCP                       24m
+    kube-system   service/prometheus-kube-prometheus-kube-etcd                 ClusterIP      None             <none>        2381/TCP                        24m
+    kube-system   service/prometheus-kube-prometheus-kube-proxy                ClusterIP      None             <none>        10249/TCP                       24m
+    kube-system   service/prometheus-kube-prometheus-kube-scheduler            ClusterIP      None             <none>        10259/TCP                       24m
+    kube-system   service/prometheus-kube-prometheus-kubelet                   ClusterIP      None             <none>        10250/TCP,10255/TCP,4194/TCP    24m
+    prometheus    service/alertmanager-operated                                ClusterIP      None             <none>        9093/TCP,9094/TCP,9094/UDP      24m
+    prometheus    service/prometheus-grafana                                   LoadBalancer   10.111.170.214   <pending>     80:30713/TCP                    24m
+    prometheus    service/prometheus-kube-prometheus-alertmanager              ClusterIP      10.104.36.224    <none>        9093/TCP,8080/TCP               24m
+    prometheus    service/prometheus-kube-prometheus-operator                  ClusterIP      10.96.157.189    <none>        443/TCP                         24m
+    prometheus    service/prometheus-kube-prometheus-prometheus                LoadBalancer   10.97.252.202    <pending>     9090:32734/TCP,8080:31297/TCP   24m
+    prometheus    service/prometheus-kube-state-metrics                        ClusterIP      10.102.225.112   <none>        8080/TCP                        24m
+    prometheus    service/prometheus-operated                                  ClusterIP      None             <none>        9090/TCP                        24m
+    prometheus    service/prometheus-prometheus-node-exporter                  ClusterIP      10.102.78.108    <none>        9100/TCP                        24m
     
-    NAMESPACE      NAME                             DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
-    kube-flannel   daemonset.apps/kube-flannel-ds   1         1         1       1            1           <none>                   3h4m
-    kube-system    daemonset.apps/kube-proxy        1         1         1       1            1           kubernetes.io/os=linux   3h4m
+    NAMESPACE      NAME                                                 DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+    kube-flannel   daemonset.apps/kube-flannel-ds                       1         1         1       1            1           <none>                   25m
+    kube-system    daemonset.apps/kube-proxy                            1         1         1       1            1           kubernetes.io/os=linux   25m
+    prometheus     daemonset.apps/prometheus-prometheus-node-exporter   1         1         1       1            1           kubernetes.io/os=linux   24m
     
-    NAMESPACE     NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
-    default       deployment.apps/flask-app   2/2     2            2           35m
-    kube-system   deployment.apps/coredns     2/2     2            2           3h4m
+    NAMESPACE     NAME                                                  READY   UP-TO-DATE   AVAILABLE   AGE
+    default       deployment.apps/flask-app                             2/2     2            2           25m
+    kube-system   deployment.apps/coredns                               2/2     2            2           25m
+    prometheus    deployment.apps/prometheus-grafana                    1/1     1            1           24m
+    prometheus    deployment.apps/prometheus-kube-prometheus-operator   1/1     1            1           24m
+    prometheus    deployment.apps/prometheus-kube-state-metrics         1/1     1            1           24m
     
-    NAMESPACE     NAME                                   DESIRED   CURRENT   READY   AGE
-    default       replicaset.apps/flask-app-5bccc6cfc4   2         2         2       35m
-    kube-system   replicaset.apps/coredns-5dd5756b68     2         2         2       3h3m
+    NAMESPACE     NAME                                                             DESIRED   CURRENT   READY   AGE
+    default       replicaset.apps/flask-app-5bccc6cfc4                             2         2         2       24m
+    kube-system   replicaset.apps/coredns-5dd5756b68                               2         2         2       24m
+    prometheus    replicaset.apps/prometheus-grafana-77c588fccf                    1         1         1       24m
+    prometheus    replicaset.apps/prometheus-kube-prometheus-operator-5f8cbfb69c   1         1         1       24m
+    prometheus    replicaset.apps/prometheus-kube-state-metrics-6db866c85b         1         1         1       24m
+    
+    NAMESPACE    NAME                                                                    READY   AGE
+    prometheus   statefulset.apps/alertmanager-prometheus-kube-prometheus-alertmanager   1/1     24m
+    prometheus   statefulset.apps/prometheus-prometheus-kube-prometheus-prometheus       1/1     24m
     ```
 
 10. **Validate that the flask app is reachable insinde the cluster (service ip on port 80):**
 
-    **curl -vv 10.102.181.1**
+    **curl -vv 10.105.107.84**
 
     ```
-    *   Trying 10.102.181.1:80...
-    * Connected to 10.102.181.1 (10.102.181.1) port 80 (#0)
+    *   Trying 10.105.107.84:80...
+    * Connected to 10.105.107.84 (10.105.107.84) port 80 (#0)
     > GET / HTTP/1.1
-    > Host: 10.102.181.1
+    > Host: 10.105.107.84
     > User-Agent: curl/7.81.0
     > Accept: */*
     > 
     * Mark bundle as not supporting multiuse
     < HTTP/1.1 200 OK
     < Server: Werkzeug/3.0.1 Python/3.9.18
-    < Date: Fri, 12 Jan 2024 12:34:30 GMT
+    < Date: Sat, 13 Jan 2024 11:25:45 GMT
     < Content-Type: text/html; charset=utf-8
     < Content-Length: 278
     < Connection: close
@@ -163,21 +196,21 @@ Deployment of the flask-app will be set with replicas, in this way it will ensur
     * Closing connection 0
     ```
 
-11. ****Validate that the flask app is reachable outside the cluster (public ip on port 31401):****
+11. **Validate that the flask app is reachable outside the cluster (public ip on port 31401):**
     
-    **curl -vv 3.80.64.20:31401**
+    **curl -vv 18.234.85.169:32144**
     ```
-    *   Trying 3.80.64.20:31401...
-    * Connected to 3.80.64.20 (3.80.64.20) port 31401 (#0)
+    *   Trying 18.234.85.169:32144...
+    * Connected to 18.234.85.169 (18.234.85.169) port 32144 (#0)
     > GET / HTTP/1.1
-    > Host: 3.80.64.20:31401
-    > User-Agent: curl/7.79.1
+    > Host: 18.234.85.169:32144
+    > User-Agent: curl/7.81.0
     > Accept: */*
     > 
     * Mark bundle as not supporting multiuse
     < HTTP/1.1 200 OK
     < Server: Werkzeug/3.0.1 Python/3.9.18
-    < Date: Fri, 12 Jan 2024 12:37:27 GMT
+    < Date: Sat, 13 Jan 2024 11:26:58 GMT
     < Content-Type: text/html; charset=utf-8
     < Content-Length: 278
     < Connection: close
@@ -193,8 +226,32 @@ Deployment of the flask-app will be set with replicas, in this way it will ensur
         <h1>Hello!</h1>
         <p>Welcome to my website. Feel free to explore!</p>
     </body>
-    * Closing connection 0
-    </html>
+    * Closing connection 0    
+    ```
+12. **Accessing grafana outside the cluster - change svc type from ClusterIP to LoadBalancer**:
+   
+    ```
+    kubectl edit svc prometheus-kube-prometheus-prometheus -n prometheus
+    kubectl edit svc prometheus-grafana -n prometheus
+    ```
+13. **login to grafana using \<publicip>:\<loadBalancerPort>**
+14. **Get default password for grafana**:
+
+    kubectl get secret --namespace prometheus prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+    ```
+    prom-operator
+    ```
+15. **create a new dashboard in grafana and get promotheus data**:
+    ```
+    Click '+' button on left panel and select 'Import'.
+    
+    Enter 12740 dashboard id under Grafana.com Dashboard.
+    
+    Click 'Load'.
+    
+    Select 'Prometheus' as the endpoint under prometheus data sources drop down.
+    
+    Click 'Import'.
     ```
 
 ## Project Enhancement Plan
@@ -210,8 +267,6 @@ Deployment of the flask-app will be set with replicas, in this way it will ensur
 - **Master and Worker Nodes**: Create a Kubernetes cluster architecture with dedicated master nodes for administrative tasks and worker nodes for application-related activities.
 - **Security Analysis**: Implement security measures for the Kubernetes cluster, including pods, to ensure robust protection against vulnerabilities and unauthorized access.
 
-### Monitoring and Analysis
-- **Prometheus Integration**: Integrate Prometheus to monitor and check the status of the Kubernetes cluster, ensuring proactive identification of issues and performance analysis.
 
 ### Security Measures
 - **Web Application Firewall (WAF)**: Implement a WAF to control and manage incoming traffic, allowing filtering based on predefined rules to block potentially malicious IP addresses.
