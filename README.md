@@ -5,7 +5,7 @@ This repository contains various resources and configurations for managing a Kub
 ## Prerequisites
 
 - **Git**: For cloning the repository and managing the source code.
-- **Environment**: EC2 machine running on Ubuntu operating system
+- **Environment**: EC2 machine running on Ubuntu V22.04 operating system
 
 
 ## Folder Structure:
