@@ -20,17 +20,6 @@
     name: helm
     state: present
 
-- name: Add Helm stable repository
-  command: helm repo add stable https://charts.helm.sh/stable
-
-- name: Add Prometheus Community Helm repository
-  command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-
-- name: Create namespace for Prometheus
-  become_user: kubernetes
-  become: true
-  command: kubectl create namespace prometheus
-
 - name: Add Helm to kubernetes user in sudoers
   replace:
     path: /etc/sudoers
@@ -38,6 +27,22 @@
     replace: '\1, /usr/local/bin/helm'
     backup: yes
     validate: 'visudo -cf %s'
+
+- name: Add Helm stable repository
+  become_user: kubernetes
+  become: true
+  command: helm repo add stable https://charts.helm.sh/stable
+
+- name: Add Prometheus Community Helm repository
+  become_user: kubernetes
+  become: true
+  command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+- name: Create namespace for Prometheus
+  become_user: kubernetes
+  become: true
+  command: kubectl create namespace prometheus
+
 
 - name: Install Prometheus using Helm
   become_user: kubernetes
